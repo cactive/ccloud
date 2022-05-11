@@ -99,4 +99,4 @@ command_spinner.succeed("Template loaded");
 
 // all done!
 console.log(chalk.greenBright("Project created successfully"));
-console.log(chalk.greenBright("To create a new project, run ccloud publish"));
+console.log(chalk.greenBright("To create a new project, run ccloud deploy"));
