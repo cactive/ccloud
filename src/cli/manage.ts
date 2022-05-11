@@ -1,14 +1,13 @@
 #!/usr/bin/env node
-
-import enquirer from "enquirer";
 import chalk from "chalk";
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { createWriteStream, existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 import { join } from "path";
 import meow from "meow";
 import { fetch_details } from "../helpers/select_project.js";
 import ora from "ora";
 import { exec } from "child_process";
 import { upload } from "../helpers/upload.js";
+import archiver from "archiver";
 
 const error = (reason: string) => {
     console.error(chalk.red(reason));
@@ -35,7 +34,7 @@ const Tasks: { [key: string]: [string, ((config: { [key: string]: any }) => void
                 console.log('\t' + err);
             });
     }],
-    "deploy": ["Deploy or update a project", async ({ api_token, project_id, build_command, build_file }) => {
+    "deploy": ["Deploy or update a project", async ({ api_token, project_id, build_command, build_folder }) => {
 
         if (!api_token) error("No api_token found in config. Please run `cloud init` first");
         if (!project_id) error("No project_id found in config. Please run `cloud init` first");
@@ -67,9 +66,30 @@ const Tasks: { [key: string]: [string, ((config: { [key: string]: any }) => void
         })
 
         spinner.succeed("Build successful");
+        spinner = ora("Zipping build folder").start();
+        await new Promise<void>(resolve => {
+            if (existsSync(join('./build.zip'))) unlinkSync(join('./build.zip'));
+
+            const output = createWriteStream(join('./build.zip'));
+            const archive = archiver('zip', { zlib: { level: 9 } });
+
+            output.on('error', (err: any) => {
+                spinner.fail('Zipping failed');
+                console.log('\t' + err);
+            });
+
+            output.on('close', resolve);
+            archive.pipe(output);
+
+            archive.directory(join('./', build_folder ?? 'build'), false);
+            archive.finalize();
+
+        })
+
+        spinner.succeed("Zipping successful");
         spinner = ora("Uploading to cloud").start();
 
-        upload(join('./', build_file ?? 'build.zip'), api_token, project_id)
+        upload(join('./', 'build.zip'), api_token, project_id)
             .then(data => {
                 spinner.succeed("Upload successful");
                 console.log(chalk.greenBright("Project deployed successfully"));
@@ -83,7 +103,6 @@ const Tasks: { [key: string]: [string, ((config: { [key: string]: any }) => void
 
     }]
 };
-
 
 const cli = meow(
     `

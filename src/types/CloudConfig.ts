@@ -3,7 +3,7 @@ export type CloudConfig = {
     api_token: string
 
     build_command?: string
-    build_file?: string
+    build_folder?: string
 
     cloud_paths?: {
         functions?: string
