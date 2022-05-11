@@ -47,7 +47,7 @@ export function fetch_details(): Promise<{ api_token: string, project_id: string
                 spinner.succeed('Connected to cactive.cloud');
                 spinner = ora(`Writing API token to config`);
 
-                let data: any;
+                let data: any = {};
                 if (existsSync(join('./cloud.config.json'))) data = JSON.parse(readFileSync(join('./cloud.config.json'), 'utf8'));
                 data.api_token = req.query.code.toString() ?? '';
                 writeFileSync(join('./cloud.config.json'), JSON.stringify(data, null, 4));
