@@ -3,13 +3,12 @@
 import ora from "ora";
 import meow from "meow";
 import chalk from "chalk";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync } from "fs";
 import { exec } from "child_process";
 import { dirname, join } from "path";
-import { CloudConfig } from "../types/CloudConfig";
 import { fileURLToPath } from "url";
 
-const templates = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'cli_templates.json'), 'utf8')) as { [key: string]: string[] };
+const templates = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../data/cli_templates.json'), 'utf8')) as { [key: string]: string[] };
 
 const cli = meow(
     `
@@ -22,7 +21,7 @@ const cli = meow(
         --version, -v   Show version
 
     Examples
-        $ ${chalk.blueBright("ccloud")} ${chalk.cyanBright('./ccloud-demo')} --template=${chalk.blueBright('remix')}
+        $ ${chalk.blueBright("ccloud-create")} ${chalk.cyanBright('./ccloud-demo')} --template=${chalk.blueBright('react')}
     `,
     {
         importMeta: import.meta,
