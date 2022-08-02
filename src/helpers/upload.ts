@@ -1,7 +1,6 @@
 import { readFileSync } from 'fs';
 import fetch, { File, FormData } from 'node-fetch'
 
-
 export const upload = (path: string, api_token: string, project_id?: string) => new Promise<{ id: string, _subdomain: string }>((resolve, reject) => {
 
     const data = new FormData();
@@ -14,7 +13,7 @@ export const upload = (path: string, api_token: string, project_id?: string) => 
     fetch(`https://api.cactive.cloud/api/upload${project_id ? `?id=${project_id}` : ''}`, {
         method: 'POST',
         headers: { 'Authorization': `API ${api_token}` },
-        body: data
+        body: data,
     })
         .then(res => res.text())
         .then(res => {

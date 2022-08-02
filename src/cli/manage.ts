@@ -28,10 +28,12 @@ const Tasks: { [key: string]: [string, ((config: { [key: string]: any }) => void
 
                 writeFileSync(join('./cloud.config.json'), JSON.stringify(config, null, 4));
                 console.log(chalk.greenBright("Config saved"));
+                process.exit(0);
             })
             .catch(err => {
                 console.log(chalk.redBright("Unable to initialize project"));
                 console.log('\t' + err);
+                process.exit(1);
             });
     }],
     "deploy": ["Deploy or update a project", async ({ api_token, project_id, build_command, build_folder }) => {
@@ -94,6 +96,7 @@ const Tasks: { [key: string]: [string, ((config: { [key: string]: any }) => void
                 spinner.succeed("Upload successful");
                 console.log(chalk.greenBright("Project deployed successfully"));
                 console.log(chalk.blueBright("Live at: "), `${chalk.cyanBright(`https://${data._subdomain}.cactive.cloud`)}`);
+                process.exit(0);
             })
             .catch(err => {
                 spinner.fail(chalk.red(`Upload failed`));
