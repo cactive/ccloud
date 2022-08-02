@@ -77,6 +77,7 @@ const get_data = (api_token: string) => new Promise<{ api_token: string, project
 
             spinner.succeed('Project details fetched');
             const { projects } = data as { projects: { id: string, subdomain: string }[] };
+
             prompt({
                 type: 'select',
                 name: 'project',
@@ -103,7 +104,7 @@ const get_data = (api_token: string) => new Promise<{ api_token: string, project
                         console.log(chalk.greenBright(`Project ${project} selected`));
                         return resolve({
                             api_token: api_token,
-                            project_id: project
+                            project_id: projects.find(p => p.subdomain === project)!.id
                         })
                     }
                 })

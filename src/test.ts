@@ -4,6 +4,8 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import fetch, { File, FormData } from 'node-fetch'
 
+console.clear();
+
 const { API_KEY, PROJECT_ID } = process.env;
 if (!API_KEY || !PROJECT_ID) {
     console.log(chalk.redBright("Please provide an 'API_KEY' & 'PROJECT_ID' environment variables"));
@@ -30,7 +32,7 @@ export const upload = (path: string, api_token: string, project_id?: string) => 
     data.append('file', upload);
 
     console.log('Sending request')
-    fetch(`https://api.cactive.cloud/api/upload${project_id ? `?id=${project_id}` : ''}`, {
+    fetch(`http://localhost:5000/api/upload${project_id ? `?id=${project_id}` : ''}`, {
         method: 'POST',
         headers: {
             'Authorization': `API ${api_token}`,
