@@ -1,5 +1,0 @@
-{
-    "react": [
-        "npx create-react-app $l --template typescript"
-    ]
-}
