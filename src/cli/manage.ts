@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 import chalk from "chalk";
-import { createWriteStream, existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
-import { join } from "path";
 import meow from "meow";
-import { fetch_details } from "../helpers/select_project.js";
+import fse from "fs-extra";
 import ora from "ora";
+import { createWriteStream, existsSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { join } from "path";
+import { fetch_details } from "../helpers/select_project.js";
 import { exec } from "child_process";
 import { upload } from "../helpers/upload.js";
 import archiver from "archiver";
+import server, { unproxy } from "./server.js";
+
+const { copySync } = fse;
 
 const error = (reason: string) => {
     console.error(chalk.red(reason));
@@ -36,7 +40,7 @@ const Tasks: { [key: string]: [string, ((config: { [key: string]: any }) => void
                 process.exit(1);
             });
     }],
-    "deploy": ["Deploy or update a project", async ({ api_token, project_id, build_command, build_folder }) => {
+    "deploy": ["Deploy or update a project", async ({ api_token, project_id, build_command, build_folder, functions_folder }) => {
 
         if (!api_token) error("No api_token found in config. Please run `cloud init` first");
         if (!project_id) error("No project_id found in config. Please run `cloud init` first");
@@ -66,11 +70,18 @@ const Tasks: { [key: string]: [string, ((config: { [key: string]: any }) => void
                     spinner.text = `${chalk.blueBright('Running')} ${command} \n${logs.map(l => `\t>\t${l}`).join('\n')}`;
                 });
         })
-
+        
         spinner.succeed("Build successful");
         spinner = ora("Zipping build folder").start();
         await new Promise<void>(resolve => {
-            if (existsSync(join('./build.zip'))) unlinkSync(join('./build.zip'));
+            if (existsSync(join('./build.zip'))) rmSync(join('./build.zip'));
+
+            if (functions_folder) {
+                copySync(join(functions_folder), join(build_folder, 'functions'));
+                if (existsSync(join(build_folder, 'functions/.live'))) {
+                    rmSync(join(build_folder, 'functions/.live'), { recursive: true });
+                }
+            }
 
             const output = createWriteStream(join('./build.zip'));
             const archive = archiver('zip', { zlib: { level: 9 } });
@@ -104,6 +115,19 @@ const Tasks: { [key: string]: [string, ((config: { [key: string]: any }) => void
                 process.exit(1);
             })
 
+    }],
+    "dev": ["Simulate lanes locally", async ({ functions_folder, api_token, project_id }) => {
+        if (!api_token || !project_id) error("No api_token or project_id found in config. Please run `cloud init` first");
+        if (!functions_folder) error("No functions_folder found in config. Please specify one.");
+
+        console.clear();
+        console.log(chalk.blueBright("Starting local development environment"));
+        if (!existsSync(join('./', functions_folder))) error("Specified functions folder not found");
+
+        server(join('./', functions_folder), api_token, project_id);
+    }],
+    "unproxy": ["Remove lingering proxy", async ({ api_token, project_id }) => {
+        await unproxy(api_token, project_id);
     }]
 };
 
@@ -122,6 +146,7 @@ const cli = meow(
         Commands
             ${chalk.blueBright('init')}\tInitialize a new project
             ${chalk.blueBright('deploy')}\tDeploy or update a project
+            ${chalk.blueBright('dev')}\tSimulate lanes locally
 
         `,
     {
