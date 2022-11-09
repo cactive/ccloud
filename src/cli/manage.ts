@@ -127,6 +127,7 @@ const Tasks: { [key: string]: [string, ((config: { [key: string]: any }) => void
         server(join('./', functions_folder), api_token, project_id);
     }],
     "unproxy": ["Remove lingering proxy", async ({ api_token, project_id }) => {
+        if (!api_token || !project_id) error("No api_token or project_id found in config. Please run `cloud init` first");
         await unproxy(api_token, project_id);
     }]
 };
