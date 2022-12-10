@@ -95,8 +95,16 @@ const warm = async (functions_folder: string, digest: any) => {
         spinner!.succeed(`Old dist cleaned`);
     }
 
-    spinner = ora("Building functions").start();
-    execSync('npx -y tsc -p .', { cwd: join(functions_folder, '.live') });
+    spinner = ora("Building functions\n").start();
+
+    try {
+        execSync('npx -y tsc -p .', { cwd: join(functions_folder, '.live'), stdio: 'inherit' });
+    } catch (err) {
+        spinner!.fail();
+        console.log(chalk.redBright(`Please fix TypeScript errors in order to continue`));
+        return;
+    }
+
     spinner!.succeed();
 
     app = createApp();

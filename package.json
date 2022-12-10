@@ -1,7 +1,7 @@
 {
   "name": "ccloud",
   "type": "module",
-  "version": "1.4.5",
+  "version": "1.4.8",
   "description": "CactiveCloud CLI Tool",
   "main": "index.js",
   "scripts": {
