@@ -5,15 +5,18 @@ import { join, resolve } from 'path';
 import { watch } from 'chokidar';
 import chalk from "chalk";
 import fse from 'fs-extra';
-import { createServer } from 'http';
+import { createServer, Server } from 'http';
 import ora, { Ora } from 'ora';
 import { pathToFileURL } from 'url';
 import fetch from 'node-fetch';
+import { createHttpTerminator } from 'http-terminator';
+
 
 const { copySync } = fse;
 
 let app: App | null = null;
 let spinner: Ora | null = null;
+let server: Server | null = null;
 const port = process.env.PORT || 4646;
 
 const router = createRouter();
@@ -37,6 +40,7 @@ const tsconfig = {
         "rootDir": ".",
         "outDir": "./dist",
         "skipLibCheck": true,
+        "resolveJsonModule": true,
     }
 };
 
@@ -98,13 +102,13 @@ const warm = async (functions_folder: string, digest: any) => {
     app = createApp();
     for (let file of readdirSync(join(functions_folder, '.live/dist/'))) {
 
-        if (!file.endsWith('.js')) return;
+        if (!file.endsWith('.js')) continue;
         const route = await import(pathToFileURL(join(resolve('./'), functions_folder, '.live/dist/', file)).toString());
 
         let location = route.route || file.split('.').slice(0, -1).join('.');
         if (location === 'index') location = '';
         if (!location.startsWith('/')) location = `/${location}`;
-        if (digest['routeless'] && Array.isArray(digest['routeless']) && digest['routeless'].includes(location)) return;
+        if (digest['routeless'] && Array.isArray(digest['routeless']) && digest['routeless'].includes(location)) continue;
 
         let def = route.default;
         if (def.default) def = def.default;
@@ -155,17 +159,31 @@ const warm = async (functions_folder: string, digest: any) => {
 
     }
 
-    app.use(fromNodeMiddleware((_, o, n) => {
+    app.use(fromNodeMiddleware((i, o, n) => {
         o.setHeader('Access-Control-Allow-Origin', '*');
         o.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
         o.setHeader('Access-Control-Max-Age', '86400');
-        o.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
+        o.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+
+        if (i.method === 'OPTIONS') {
+            o.writeHead(200);
+            o.end();
+            return;
+        }
+
         n();
     }));
 
     app.use(router);
 
-    createServer(toNodeListener(app)).listen(port, () =>
+    if (server) {
+        spinner = ora("Restarting server").start();
+        const httpTerminator = createHttpTerminator({ server });
+        await httpTerminator.terminate();
+        spinner!.succeed();
+    }
+
+    server = createServer(toNodeListener(app)).listen(port, () =>
         console.log(chalk.underline(chalk.blueBright(`\n${chalk.white(chalk.bold('>>>>'))} Server ready (${chalk.gray(':' + port)})\n`))));
 
 }
