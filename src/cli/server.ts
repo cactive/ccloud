@@ -161,9 +161,9 @@ const warm = async (functions_folder: string, digest: any) => {
 
     app.use(fromNodeMiddleware((i, o, n) => {
         o.setHeader('Access-Control-Allow-Origin', '*');
+        o.setHeader('Access-Control-Allow-Headers', '*');
         o.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE');
         o.setHeader('Access-Control-Max-Age', '86400');
-        o.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
 
         if (i.method === 'OPTIONS') {
             o.writeHead(200);
